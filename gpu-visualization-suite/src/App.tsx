@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -21,9 +21,23 @@ import {
 
 import CudaMatrixMultiply from "./CudaMatrixMultiply";
 import GpuArchitectureTutorial from "./GpuArchitectureTutorial";
+import CudaIndexingTutorial from "./CudaIndexingTutorial";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => {
+    // Load from localStorage on initial render
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("gpu-viz-active-tab") || "overview";
+    }
+    return "overview";
+  });
+
+  // Save to localStorage whenever activeTab changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("gpu-viz-active-tab", activeTab);
+    }
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50/30 dark:to-blue-950/10">
@@ -51,7 +65,7 @@ export default function App() {
                 </div>
               </div>
 
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger
                   value="overview"
                   className="flex items-center gap-2"
@@ -66,6 +80,13 @@ export default function App() {
                   <GraduationCap className="w-4 h-4" />
                   GPU Architecture Tutorial
                 </TabsTrigger>
+                <TabsTrigger
+                  value="indexing"
+                  className="flex items-center gap-2"
+                >
+                  <Code className="w-4 h-4" />
+                  CUDA 3D Indexing
+                </TabsTrigger>
                 <TabsTrigger value="matrix" className="flex items-center gap-2">
                   <Grid3X3 className="w-4 h-4" />
                   CUDA Matrix Multiply
@@ -76,7 +97,7 @@ export default function App() {
         </div>
 
         <TabsContent value="overview" className="container mx-auto px-4 py-8">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => setActiveTab("tutorial")}
@@ -122,6 +143,57 @@ export default function App() {
                   </div>
                   <Button className="w-full" variant="outline">
                     <span>Start Learning</span>
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setActiveTab("indexing")}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code className="w-5 h-5 text-orange-500" />
+                  CUDA 3D Indexing Tutorial
+                </CardTitle>
+                <CardDescription>
+                  Master CUDA's 3D thread indexing with the apartment complex
+                  analogy
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Cpu className="w-4 h-4 text-blue-500" />
+                      <span>3D Visualization</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Code className="w-4 h-4 text-green-500" />
+                      <span>Real CUDA Code</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      <span>Interactive Demos</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <MemoryStick className="w-4 h-4 text-purple-500" />
+                      <span>ID Calculations</span>
+                    </div>
+                  </div>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">Based on whoami.cu:</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• 3D grid and block organization</li>
+                      <li>• Linear ID calculation formulas</li>
+                      <li>• Apartment complex analogy</li>
+                      <li>• Step-by-step ID derivation</li>
+                    </ul>
+                  </div>
+                  <Button className="w-full" variant="outline">
+                    <span>Learn 3D Indexing</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -184,6 +256,10 @@ export default function App() {
 
         <TabsContent value="tutorial" className="w-full">
           <GpuArchitectureTutorial />
+        </TabsContent>
+
+        <TabsContent value="indexing" className="w-full">
+          <CudaIndexingTutorial />
         </TabsContent>
 
         <TabsContent value="matrix" className="w-full">

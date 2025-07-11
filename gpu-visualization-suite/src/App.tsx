@@ -22,6 +22,7 @@ import {
 import CudaMatrixMultiply from "./CudaMatrixMultiply";
 import GpuArchitectureTutorial from "./GpuArchitectureTutorial";
 import CudaIndexingTutorial from "./CudaIndexingTutorial";
+import CudaVectorAdd from "./CudaVectorAdd";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
@@ -44,7 +45,7 @@ export default function App() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col space-y-4 py-4">
+            <div className="flex flex-col space-y-6 py-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -55,41 +56,53 @@ export default function App() {
                     CUDA programming
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-sm">
-                    Educational
-                  </Badge>
-                  <Badge variant="outline" className="text-sm">
-                    Interactive
-                  </Badge>
+                <div className="text-right">
+                  <a
+                    href="https://alexxi.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm italic text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  >
+                    Created by Alex Xi
+                  </a>
                 </div>
               </div>
 
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5 h-12 bg-muted/30">
                 <TabsTrigger
                   value="overview"
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-1.5 cursor-pointer px-2 py-2 text-xs font-medium"
                 >
                   <Cpu className="w-4 h-4" />
-                  Overview
+                  <span className="hidden lg:block">Overview</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="tutorial"
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-1.5 cursor-pointer px-2 py-2 text-xs font-medium"
                 >
                   <GraduationCap className="w-4 h-4" />
-                  GPU Architecture Tutorial
+                  <span className="hidden lg:block">Architecture</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="indexing"
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-1.5 cursor-pointer px-2 py-2 text-xs font-medium"
                 >
                   <Code className="w-4 h-4" />
-                  CUDA 3D Indexing
+                  <span className="hidden lg:block">Indexing</span>
                 </TabsTrigger>
-                <TabsTrigger value="matrix" className="flex items-center gap-2">
+                <TabsTrigger
+                  value="vectoradd"
+                  className="flex items-center justify-center gap-1.5 cursor-pointer px-2 py-2 text-xs font-medium"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span className="hidden lg:block">Vector Add</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="matrix"
+                  className="flex items-center justify-center gap-1.5 cursor-pointer px-2 py-2 text-xs font-medium"
+                >
                   <Grid3X3 className="w-4 h-4" />
-                  CUDA Matrix Multiply
+                  <span className="hidden lg:block">Matrix</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -97,7 +110,7 @@ export default function App() {
         </div>
 
         <TabsContent value="overview" className="container mx-auto px-4 py-8">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
             <Card
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => setActiveTab("tutorial")}
@@ -202,6 +215,59 @@ export default function App() {
 
             <Card
               className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setActiveTab("vectoradd")}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-orange-500" />
+                  CUDA Vector Addition
+                </CardTitle>
+                <CardDescription>
+                  Learn parallel vector addition with interactive thread
+                  visualization
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      <span>1D Threading</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Code className="w-4 h-4 text-green-500" />
+                      <span>Simple Kernel</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Cpu className="w-4 h-4 text-blue-500" />
+                      <span>Thread Mapping</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <MemoryStick className="w-4 h-4 text-purple-500" />
+                      <span>Memory Coalescing</span>
+                    </div>
+                  </div>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">
+                      Perfect for beginners:
+                    </h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Simplest CUDA parallel pattern</li>
+                      <li>• Interactive thread visualization</li>
+                      <li>• Step-by-step computation</li>
+                      <li>• Memory optimization techniques</li>
+                    </ul>
+                  </div>
+                  <Button className="w-full" variant="outline">
+                    <span>Start with Vector Addition</span>
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => setActiveTab("matrix")}
             >
               <CardHeader>
@@ -254,15 +320,19 @@ export default function App() {
           </div>
         </TabsContent>
 
-        <TabsContent value="tutorial" className="w-full">
+        <TabsContent value="tutorial" className="w-full pt-8">
           <GpuArchitectureTutorial />
         </TabsContent>
 
-        <TabsContent value="indexing" className="w-full">
+        <TabsContent value="indexing" className="w-full pt-8">
           <CudaIndexingTutorial />
         </TabsContent>
 
-        <TabsContent value="matrix" className="w-full">
+        <TabsContent value="vectoradd" className="w-full pt-8">
+          <CudaVectorAdd />
+        </TabsContent>
+
+        <TabsContent value="matrix" className="w-full pt-8">
           <CudaMatrixMultiply />
         </TabsContent>
       </Tabs>

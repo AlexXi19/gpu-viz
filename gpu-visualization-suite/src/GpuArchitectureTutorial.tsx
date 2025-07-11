@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import {
   Cpu,
   Grid3X3,
@@ -23,6 +24,8 @@ import {
   Code,
   MemoryStick,
   Workflow,
+  Settings,
+  TrendingUp,
 } from "lucide-react";
 
 type Language = "en" | "zh";
@@ -441,73 +444,309 @@ function GPUVisualization({ type, lang }: { type: string; lang: Language }) {
 
 function InteractiveDemo({ type, lang }: { type: string; lang: Language }) {
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [cpuProgress, setCpuProgress] = useState(0);
+  const [gpuProgress, setGpuProgress] = useState(0);
+  const [problemSize, setProblemSize] = useState(1024);
+  const [cpuTime, setCpuTime] = useState(0);
+  const [gpuTime, setGpuTime] = useState(0);
+  const [cpuElements, setCpuElements] = useState<number[]>([]);
+  const [gpuElements, setGpuElements] = useState<number[]>([]);
 
   const startDemo = () => {
     setIsRunning(true);
-    setProgress(0);
+    setCpuProgress(0);
+    setGpuProgress(0);
+    setCpuTime(0);
+    setGpuTime(0);
+    setCpuElements([]);
+    setGpuElements([]);
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsRunning(false);
-          return 0;
-        }
-        return prev + 2;
-      });
+    // Initialize elements array for visualization
+    const elements = Array.from(
+      { length: Math.min(problemSize, 32) },
+      (_, i) => i
+    );
+
+    // CPU execution (sequential)
+    let cpuCount = 0;
+    const cpuInterval = setInterval(() => {
+      cpuCount++;
+      setCpuProgress((cpuCount / problemSize) * 100);
+      setCpuTime(cpuCount * 0.1); // 0.1ms per element (realistic CPU timing)
+      setCpuElements(elements.slice(0, Math.min(cpuCount, 32)));
+
+      if (cpuCount >= problemSize) {
+        clearInterval(cpuInterval);
+      }
+    }, 100); // 100ms per element for visualization
+
+    // GPU execution (parallel - much faster)
+    setTimeout(() => {
+      // GPU has setup overhead but then processes all elements simultaneously
+      const gpuSetupTime = 200; // 200ms setup time
+
+      // Setup phase
+      setTimeout(() => {
+        setGpuProgress(100);
+        setGpuTime(gpuSetupTime + (problemSize / 1000000) * 1000); // Realistic GPU timing
+        setGpuElements(elements); // All elements processed simultaneously
+        setIsRunning(false);
+      }, gpuSetupTime);
     }, 50);
   };
 
   if (type === "kernel") {
+    const speedup =
+      cpuTime > 0 && gpuTime > 0 ? (cpuTime / gpuTime).toFixed(1) : "0";
+
     return (
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Code className="w-5 h-5" />
-            {lang === "en" ? "Kernel Execution Demo" : "核函数执行演示"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm mb-4">
-            <div>{lang === "en" ? "// Kernel function" : "// 核函数"}</div>
+      <div className="mt-4 space-y-4">
+        {/* Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              {lang === "en" ? "Demo Configuration" : "演示配置"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              __global__ void addArrays(float* a, float* b, float* c, int n){" "}
-              {"{"}
+              <label className="text-sm font-medium mb-2 block">
+                {lang === "en" ? "Problem Size" : "问题规模"}:{" "}
+                {problemSize.toLocaleString()}{" "}
+                {lang === "en" ? "elements" : "个元素"}
+              </label>
+              <Slider
+                value={[problemSize]}
+                onValueChange={(value) => setProblemSize(value[0])}
+                min={1024}
+                max={16777216}
+                step={1024}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>1K</span>
+                <span>16M</span>
+              </div>
             </div>
-            <div className="pl-4">
-              int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            </div>
-            <div className="pl-4">
-              if (idx &lt; n) c[idx] = a[idx] + b[idx];
-            </div>
-            <div>{"}"}</div>
-          </div>
 
-          <div className="space-y-2 mb-4">
-            <div className="text-sm font-medium">
-              {lang === "en" ? "Execution Progress:" : "执行进度："}
-            </div>
-            <Progress value={progress} className="w-full" />
-            <div className="text-xs text-muted-foreground">
-              {lang === "en"
-                ? `${Math.round(progress)}% of 1024 threads completed`
-                : `${Math.round(progress)}% 的 1024 个线程已完成`}
-            </div>
-          </div>
+            <Button onClick={startDemo} disabled={isRunning} className="w-full">
+              <Play className="w-4 h-4 mr-2" />
+              {isRunning
+                ? lang === "en"
+                  ? "Running..."
+                  : "运行中..."
+                : lang === "en"
+                ? "Run Performance Comparison"
+                : "运行性能对比"}
+            </Button>
+          </CardContent>
+        </Card>
 
-          <Button onClick={startDemo} disabled={isRunning} className="w-full">
-            <Play className="w-4 h-4 mr-2" />
-            {isRunning
-              ? lang === "en"
-                ? "Running..."
-                : "运行中..."
-              : lang === "en"
-              ? "Run Kernel"
-              : "运行核函数"}
-          </Button>
-        </CardContent>
-      </Card>
+        {/* CPU vs GPU Comparison */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* CPU Execution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Cpu className="w-5 h-5 text-red-500" />
+                {lang === "en" ? "CPU (Sequential)" : "CPU（顺序执行）"}
+              </CardTitle>
+              <CardDescription>
+                {lang === "en"
+                  ? "Processes one element at a time"
+                  : "逐个处理元素"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-xs">
+                <div>{lang === "en" ? "// CPU code" : "// CPU代码"}</div>
+                <div>for (int i = 0; i &lt; n; i++) {"{"}</div>
+                <div className="pl-4">c[i] = a[i] + b[i];</div>
+                <div>{"}"}</div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>{lang === "en" ? "Progress:" : "进度："}</span>
+                  <span>{cpuProgress.toFixed(1)}%</span>
+                </div>
+                <Progress value={cpuProgress} className="w-full h-3" />
+                <div className="text-xs text-muted-foreground">
+                  {lang === "en" ? "Time:" : "时间："} {cpuTime.toFixed(1)}ms
+                </div>
+              </div>
+
+              {/* Visual representation */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">
+                  {lang === "en" ? "Processing Elements:" : "处理元素："}
+                </div>
+                <div className="grid grid-cols-8 gap-1">
+                  {Array.from({ length: 32 }, (_, i) => (
+                    <div
+                      key={i}
+                      className={`w-6 h-6 rounded text-xs flex items-center justify-center font-mono ${
+                        cpuElements.includes(i)
+                          ? "bg-red-500 text-white"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {i}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {lang === "en" ? "Red = Completed" : "红色 = 已完成"}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* GPU Execution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-green-500" />
+                {lang === "en" ? "GPU (Parallel)" : "GPU（并行执行）"}
+              </CardTitle>
+              <CardDescription>
+                {lang === "en"
+                  ? "Processes all elements simultaneously"
+                  : "同时处理所有元素"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-xs">
+                <div>{lang === "en" ? "// GPU kernel" : "// GPU核函数"}</div>
+                <div>__global__ void addArrays(...) {"{"}</div>
+                <div className="pl-4">
+                  int i = blockIdx.x * blockDim.x + threadIdx.x;
+                </div>
+                <div className="pl-4">if (i &lt; n) c[i] = a[i] + b[i];</div>
+                <div>{"}"}</div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>{lang === "en" ? "Progress:" : "进度："}</span>
+                  <span>{gpuProgress.toFixed(1)}%</span>
+                </div>
+                <Progress value={gpuProgress} className="w-full h-3" />
+                <div className="text-xs text-muted-foreground">
+                  {lang === "en" ? "Time:" : "时间："} {gpuTime.toFixed(1)}ms
+                </div>
+              </div>
+
+              {/* Visual representation */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">
+                  {lang === "en" ? "Processing Elements:" : "处理元素："}
+                </div>
+                <div className="grid grid-cols-8 gap-1">
+                  {Array.from({ length: 32 }, (_, i) => (
+                    <div
+                      key={i}
+                      className={`w-6 h-6 rounded text-xs flex items-center justify-center font-mono ${
+                        gpuElements.includes(i)
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {i}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {lang === "en"
+                    ? "Green = Completed (All at Once!)"
+                    : "绿色 = 已完成（同时完成！）"}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Performance Summary */}
+        {!isRunning && cpuTime > 0 && gpuTime > 0 && (
+          <Card className="border-2 border-green-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-500" />
+                {lang === "en" ? "Performance Results" : "性能结果"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-500">
+                    {cpuTime.toFixed(1)}ms
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    CPU {lang === "en" ? "Time" : "时间"}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-500">
+                    {gpuTime.toFixed(1)}ms
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    GPU {lang === "en" ? "Time" : "时间"}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-500">
+                    {speedup}x
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {lang === "en" ? "Speedup" : "加速比"}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-500">
+                    {problemSize.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {lang === "en" ? "Elements" : "元素"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 rounded-lg">
+                <h4 className="font-semibold mb-2">
+                  {lang === "en" ? "Key Insights:" : "关键要点："}
+                </h4>
+                <ul className="text-sm space-y-1">
+                  <li>
+                    •{" "}
+                    {lang === "en"
+                      ? "GPU has setup overhead but massive parallelism"
+                      : "GPU有启动开销，但具有大规模并行性"}
+                  </li>
+                  <li>
+                    •{" "}
+                    {lang === "en"
+                      ? "CPU processes sequentially, GPU processes everything simultaneously"
+                      : "CPU顺序处理，GPU同时处理所有内容"}
+                  </li>
+                  <li>
+                    •{" "}
+                    {lang === "en"
+                      ? "Larger problems benefit more from GPU parallelism"
+                      : "更大的问题从GPU并行性中受益更多"}
+                  </li>
+                  <li>
+                    •{" "}
+                    {lang === "en"
+                      ? "GPU excels at simple operations on large datasets"
+                      : "GPU擅长对大数据集进行简单操作"}
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     );
   }
 
@@ -880,36 +1119,42 @@ export default function GpuArchitectureTutorial() {
 
               {/* Performance */}
               {activeSection === "performance" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Workflow className="w-6 h-6" />
-                      {t.performance.title}
-                    </CardTitle>
-                    <CardDescription>
-                      {t.performance.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4">
-                      {t.performance.content.concepts.map((concept, index) => (
-                        <Card
-                          key={index}
-                          className="border-l-4 border-l-green-500"
-                        >
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg">
-                              {concept.name}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <p className="text-sm">{concept.desc}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Workflow className="w-6 h-6" />
+                        {t.performance.title}
+                      </CardTitle>
+                      <CardDescription>
+                        {t.performance.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4">
+                        {t.performance.content.concepts.map(
+                          (concept, index) => (
+                            <Card
+                              key={index}
+                              className="border-l-4 border-l-green-500"
+                            >
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">
+                                  {concept.name}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                <p className="text-sm">{concept.desc}</p>
+                              </CardContent>
+                            </Card>
+                          )
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <InteractiveDemo type="kernel" lang={language} />
+                </div>
               )}
             </div>
           </div>

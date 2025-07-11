@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Slider } from "./components/ui/slider";
 import { Alert, AlertDescription } from "./components/ui/alert";
 import { Separator } from "./components/ui/separator";
+import { Grid3X3 } from "lucide-react";
 
 interface MatrixCell {
   row: number;
@@ -880,6 +881,17 @@ matrixMul<<<gridSize, blockSize>>>(d_A, d_B, d_C, ${config.matrixSize});`;
             Interactive visualization showing how CUDA threads and blocks map to
             matrix elements
           </CardDescription>
+          <div className="mt-4">
+            <a
+              href="https://leetgpu.com/challenges/matrix-multiplication"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <Grid3X3 className="w-4 h-4" />
+              Practice on LeetGPU
+            </a>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4 mb-6">

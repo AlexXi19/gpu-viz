@@ -10,7 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
 import {
   Cpu,
   Grid3X3,
@@ -24,7 +23,6 @@ import {
   Code,
   MemoryStick,
   Workflow,
-  Settings,
   TrendingUp,
 } from "lucide-react";
 
@@ -446,7 +444,7 @@ function InteractiveDemo({ type, lang }: { type: string; lang: Language }) {
   const [isRunning, setIsRunning] = useState(false);
   const [cpuProgress, setCpuProgress] = useState(0);
   const [gpuProgress, setGpuProgress] = useState(0);
-  const [problemSize, setProblemSize] = useState(1024);
+  const [problemSize] = useState(1048576); // 1M elements for good demo performance
   const [cpuTime, setCpuTime] = useState(0);
   const [gpuTime, setGpuTime] = useState(0);
   const [cpuElements, setCpuElements] = useState<number[]>([]);
@@ -467,32 +465,53 @@ function InteractiveDemo({ type, lang }: { type: string; lang: Language }) {
       (_, i) => i
     );
 
-    // CPU execution (sequential)
-    let cpuCount = 0;
-    const cpuInterval = setInterval(() => {
-      cpuCount++;
-      setCpuProgress((cpuCount / problemSize) * 100);
-      setCpuTime(cpuCount * 0.1); // 0.1ms per element (realistic CPU timing)
-      setCpuElements(elements.slice(0, Math.min(cpuCount, 32)));
+    // CPU execution (sequential) - process in chunks for reasonable animation
+    const totalCpuTime = Math.max(800, Math.min(3000, problemSize / 5000)); // 0.8-3s based on problem size
+    const animationSteps = 20; // 20 animation steps
+    const stepDuration = totalCpuTime / animationSteps;
+    const elementsPerStep = Math.ceil(problemSize / animationSteps);
 
-      if (cpuCount >= problemSize) {
+    let cpuStep = 0;
+    const cpuInterval = setInterval(() => {
+      cpuStep++;
+      const elementsProcessed = Math.min(
+        cpuStep * elementsPerStep,
+        problemSize
+      );
+      const progress = (elementsProcessed / problemSize) * 100;
+      const timeElapsed = (cpuStep / animationSteps) * totalCpuTime;
+
+      setCpuProgress(progress);
+      setCpuTime(timeElapsed);
+
+      // Update visual elements (show progression through first 32 elements)
+      const visualProgress = Math.min(cpuStep * (32 / animationSteps), 32);
+      setCpuElements(elements.slice(0, Math.floor(visualProgress)));
+
+      if (cpuStep >= animationSteps) {
         clearInterval(cpuInterval);
+        // Ensure final values are exact
+        setCpuProgress(100);
+        setCpuTime(totalCpuTime);
+        setCpuElements(elements);
       }
-    }, 100); // 100ms per element for visualization
+    }, stepDuration);
 
     // GPU execution (parallel - much faster)
     setTimeout(() => {
       // GPU has setup overhead but then processes all elements simultaneously
-      const gpuSetupTime = 200; // 200ms setup time
+      const gpuSetupTime = 100; // 100ms setup time
+      const gpuComputeTime = Math.max(20, problemSize / 500000); // Much faster than CPU
+      const totalGpuTime = gpuSetupTime + gpuComputeTime;
 
       // Setup phase
       setTimeout(() => {
         setGpuProgress(100);
-        setGpuTime(gpuSetupTime + (problemSize / 1000000) * 1000); // Realistic GPU timing
+        setGpuTime(totalGpuTime);
         setGpuElements(elements); // All elements processed simultaneously
         setIsRunning(false);
       }, gpuSetupTime);
-    }, 50);
+    }, 20);
   };
 
   if (type === "kernel") {
@@ -501,47 +520,19 @@ function InteractiveDemo({ type, lang }: { type: string; lang: Language }) {
 
     return (
       <div className="mt-4 space-y-4">
-        {/* Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              {lang === "en" ? "Demo Configuration" : "演示配置"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                {lang === "en" ? "Problem Size" : "问题规模"}:{" "}
-                {problemSize.toLocaleString()}{" "}
-                {lang === "en" ? "elements" : "个元素"}
-              </label>
-              <Slider
-                value={[problemSize]}
-                onValueChange={(value) => setProblemSize(value[0])}
-                min={1024}
-                max={16777216}
-                step={1024}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>1K</span>
-                <span>16M</span>
-              </div>
-            </div>
-
-            <Button onClick={startDemo} disabled={isRunning} className="w-full">
-              <Play className="w-4 h-4 mr-2" />
-              {isRunning
-                ? lang === "en"
-                  ? "Running..."
-                  : "运行中..."
-                : lang === "en"
-                ? "Run Performance Comparison"
-                : "运行性能对比"}
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Run Button */}
+        <div className="flex justify-center">
+          <Button onClick={startDemo} disabled={isRunning} size="lg">
+            <Play className="w-4 h-4 mr-2" />
+            {isRunning
+              ? lang === "en"
+                ? "Running..."
+                : "运行中..."
+              : lang === "en"
+              ? "Run Performance Comparison"
+              : "运行性能对比"}
+          </Button>
+        </div>
 
         {/* CPU vs GPU Comparison */}
         <div className="grid md:grid-cols-2 gap-4">
@@ -753,9 +744,23 @@ function InteractiveDemo({ type, lang }: { type: string; lang: Language }) {
   return null;
 }
 
-export default function GpuArchitectureTutorial() {
-  const [language, setLanguage] = useState<Language>("en");
+interface GpuArchitectureTutorialProps {
+  language?: string;
+  setLanguage?: (language: string) => void;
+}
+
+export default function GpuArchitectureTutorial({
+  language: propLanguage,
+  setLanguage: propSetLanguage,
+}: GpuArchitectureTutorialProps = {}) {
+  const [internalLanguage, setInternalLanguage] = useState<Language>("en");
   const [activeSection, setActiveSection] = useState("intro");
+
+  // Use prop language if provided, otherwise use internal state
+  const language = (propLanguage as Language) || internalLanguage;
+  const setLanguage = propSetLanguage
+    ? (lang: string) => propSetLanguage(lang)
+    : (lang: Language) => setInternalLanguage(lang);
 
   const t = content[language];
 
@@ -773,25 +778,14 @@ export default function GpuArchitectureTutorial() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50/30 dark:to-blue-950/10">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
+      <header className="border-b bg-background">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 {t.title}
               </h1>
-              <p className="text-muted-foreground">{t.subtitle}</p>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLanguage(language === "en" ? "zh" : "en")}
-              className="flex items-center gap-2"
-            >
-              <Languages className="w-4 h-4" />
-              {t.languageToggle}
-            </Button>
           </div>
         </div>
       </header>
@@ -800,7 +794,7 @@ export default function GpuArchitectureTutorial() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Navigation */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24">
+            <div>
               <nav className="space-y-2">
                 {sections.map((section) => {
                   const Icon = section.icon;

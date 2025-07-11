@@ -17,6 +17,7 @@ import {
   MemoryStick,
   Cpu,
   ArrowRight,
+  Languages,
 } from "lucide-react";
 
 import CudaMatrixMultiply from "./CudaMatrixMultiply";
@@ -33,6 +34,14 @@ export default function App() {
     return "overview";
   });
 
+  const [language, setLanguage] = useState(() => {
+    // Load from localStorage on initial render
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("gpu-viz-language") || "en";
+    }
+    return "en";
+  });
+
   // Save to localStorage whenever activeTab changes
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -40,12 +49,19 @@ export default function App() {
     }
   }, [activeTab]);
 
+  // Save to localStorage whenever language changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("gpu-viz-language", language);
+    }
+  }, [language]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50/30 dark:to-blue-950/10">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
+        <div className="border-b bg-background">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col space-y-6 py-6">
+            <div className="flex flex-col space-y-6 pt-14 pb-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -56,7 +72,16 @@ export default function App() {
                     CUDA programming
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLanguage(language === "en" ? "zh" : "en")}
+                    className="flex items-center gap-2"
+                  >
+                    <Languages className="w-4 h-4" />
+                    {language === "en" ? "中文" : "English"}
+                  </Button>
                   <a
                     href="https://alexxi.dev"
                     target="_blank"
@@ -320,19 +345,22 @@ export default function App() {
           </div>
         </TabsContent>
 
-        <TabsContent value="tutorial" className="w-full pt-8">
-          <GpuArchitectureTutorial />
+        <TabsContent value="tutorial" className="w-full pt-6">
+          <GpuArchitectureTutorial
+            language={language}
+            setLanguage={setLanguage}
+          />
         </TabsContent>
 
-        <TabsContent value="indexing" className="w-full pt-8">
+        <TabsContent value="indexing" className="w-full pt-6">
           <CudaIndexingTutorial />
         </TabsContent>
 
-        <TabsContent value="vectoradd" className="w-full pt-8">
+        <TabsContent value="vectoradd" className="w-full pt-6">
           <CudaVectorAdd />
         </TabsContent>
 
-        <TabsContent value="matrix" className="w-full pt-8">
+        <TabsContent value="matrix" className="w-full pt-6">
           <CudaMatrixMultiply />
         </TabsContent>
       </Tabs>

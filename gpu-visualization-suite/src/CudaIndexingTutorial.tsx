@@ -584,7 +584,7 @@ const CudaIndexingTutorial: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">
@@ -594,6 +594,19 @@ const CudaIndexingTutorial: React.FC = () => {
             Learn how CUDA maps 3D thread coordinates to linear IDs using the
             apartment complex analogy
           </CardDescription>
+          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Source:</strong> Based on the whoami.cu example from{" "}
+              <a
+                href="https://github.com/Infatoshi/cuda-course/tree/master/05_Writing_your_First_Kernels/01%20CUDA%20Basics"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+              >
+                Infatoshi's CUDA Course
+              </a>
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">

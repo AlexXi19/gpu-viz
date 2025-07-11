@@ -871,7 +871,7 @@ matrixMul<<<gridSize, blockSize>>>(d_A, d_B, d_C, ${config.matrixSize});`;
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">
